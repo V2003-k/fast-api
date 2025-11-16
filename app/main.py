@@ -10,16 +10,12 @@ import time
 from sqlalchemy.orm import Session
 from . import models
 from .database import engine, get_db
+from .schemas import Post, PostBase, PostCreate
+from typing import List
 
 app = FastAPI()
 
 models.Base.metadata.create_all(engine)
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    # created_at: Optional[datetime]
 
 while True:
     try:
@@ -48,7 +44,7 @@ def find_index_post(id):
 async def root():
     return { "message": "Welcome to my API!" }
 
-@app.get('/posts')
+@app.get('/posts', response_model=List[Post])
 def get_posts(db: Session = Depends(get_db)):
     # return { "data": jsonable_encoder(my_posts) }
     # cursor.execute(""" SELECT * FROM posts """)
@@ -57,10 +53,10 @@ def get_posts(db: Session = Depends(get_db)):
     # my_posts.extend(posts)
     
     posts = db.query(models.Post).all()
-    return { "data": posts }
+    return posts
 
-@app.post('/posts', status_code=status.HTTP_201_CREATED)
-def create_posts(post: Post, db: Session = Depends(get_db)):
+@app.post('/posts', status_code=status.HTTP_201_CREATED, response_model=Post)
+def create_posts(post: PostCreate, db: Session = Depends(get_db)):
     # cursor.execute(f""" INSERT INTO posts (title, content, ispublished) VALUES ({post.title}, {post.content}, {post.ispublished}) """)
     # cursor.execute(""" INSERT INTO posts (title, content, ispublished) VALUES (%s, %s, %s) RETURNING * """, (post.title, post.content, post.ispublished))
     
@@ -71,16 +67,16 @@ def create_posts(post: Post, db: Session = Depends(get_db)):
     db.add(new_posts)
     db.commit()
     db.refresh(new_posts)
-    return { "data": new_posts }
+    return new_posts
 
-@app.get('/posts/latest')
+@app.get('/posts/latest', response_model=Post)
 def get_latest_posts(db: Session = Depends(get_db)):
     # post = my_posts[len(my_posts)-1]
     post = db.query(models.Post).order_by(models.Post.id.desc()).first()
 
-    return { "detail": post }
+    return post
 
-@app.get('/posts/{id}')
+@app.get('/posts/{id}', response_model=Post)
 def get_posts(id: int, response: Response, db: Session = Depends(get_db)):
     # cursor.execute(""" SELECT * FROM posts WHERE id = %s """, (id, ))
     # post = cursor.fetchone()
@@ -93,7 +89,8 @@ def get_posts(id: int, response: Response, db: Session = Depends(get_db)):
         # response.status_code = status.HTTP_404_NOT_FOUND
         # return { "message": f"post with id: {id} was not found" }
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} was not found")
-    return { "post_details": post }
+    
+    return post
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_posts(id: int, db: Session = Depends(get_db)):
@@ -112,10 +109,10 @@ def delete_posts(id: int, db: Session = Depends(get_db)):
     post.delete(synchronize_session=False)
     db.commit()
 
-    return { "data": post }
+    return post
 
-@app.put('/posts/{id}')
-def update_posts(id: int, post: Post, db: Session = Depends(get_db)):
+@app.put('/posts/{id}', response_model=Post)
+def update_posts(id: int, post: PostCreate, db: Session = Depends(get_db)):
     # cursor.execute(""" UPDATE posts SET title = %s, content = %s, ispublished = %s WHERE ID = %s RETURNING * """, (post.title, post.content, post.ispublished, id, ))
     # updated_post = cursor.fetchone()
     
@@ -129,4 +126,4 @@ def update_posts(id: int, post: Post, db: Session = Depends(get_db)):
     post_query.update(post.model_dump(), synchronize_session=False)
     db.commit()
 
-    return { "data": post }
+    return post_query.first()

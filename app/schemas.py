@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
@@ -28,6 +28,13 @@ class Post(PostBase):
         orm_mode = True
         # Pydantic's orm_mode will tell the Pydantic model to read the data even if it is not a dict
 
+class PostOut(BaseModel):
+    Post: Post
+    votes: int
+
+    class config:
+        orm_mode = True
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -42,3 +49,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str] = None
+
+class Vote(BaseModel):
+    post_id: int
+    dir: int = Field(..., strict=True, ge=0, le=1)

@@ -4,8 +4,9 @@ from sqlalchemy.orm import sessionmaker
 import psycopg
 from psycopg.rows import dict_row
 import time
+from .config import settings
 
-SQLMODEL_DATABASE_URL = "postgresql+psycopg://postgres:2003@localhost/fastapi"
+SQLMODEL_DATABASE_URL = f"postgresql+psycopg://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name }"
 
 engine = create_engine(SQLMODEL_DATABASE_URL)
 
@@ -20,13 +21,13 @@ def get_db():
     finally:
         db.close()
 
-while True:
-    try:
-        conn = psycopg.connect(host='localhost', dbname='fastapi', user='postgres', password='2003', row_factory=dict_row)
-        cursor = conn.cursor()
-        print("Database Connection was Successfull!")
-        break
-    except Exception as error:
-        print("Connecting to database failed")
-        print("Error: ", error)
-        time.sleep(2)
+# while True:
+#     try:
+#         conn = psycopg.connect(host='localhost', dbname='fastapi', user='postgres', password='2003', row_factory=dict_row)
+#         cursor = conn.cursor()
+#         print("Database Connection was Successfull!")
+#         break
+#     except Exception as error:
+#         print("Connecting to database failed")
+#         print("Error: ", error)
+#         time.sleep(2)
